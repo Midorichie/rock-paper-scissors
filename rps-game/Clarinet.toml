@@ -1,9 +1,11 @@
 [project]
-name = "rps-game"
-authors = ["Your Name"]
-description = "A Rock-Paper-Scissors game built with Clarity smart contracts"
-version = "1.0.0"
+name = "rock-paper-scissors"
+description = "Rock-Paper-Scissors (commit-reveal) with leaderboard"
+version = "0.2.0"
+authors = ["Hammed Yakub"]
 
-[contracts.rps-game]
+[contracts.rock-paper-scissors]
 path = "contracts/rock-paper-scissors.clar"
-depends_on = []
+
+[contracts.leaderboard]
+path = "contracts/leaderboard.clar"
