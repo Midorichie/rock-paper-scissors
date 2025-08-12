@@ -1,0 +1,9 @@
+[project]
+name = "rps-game"
+authors = ["Your Name"]
+description = "A Rock-Paper-Scissors game built with Clarity smart contracts"
+version = "1.0.0"
+
+[contracts.rps-game]
+path = "contracts/rock-paper-scissors.clar"
+depends_on = []
