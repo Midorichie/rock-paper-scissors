@@ -1,89 +1,33 @@
-# Rock-Paper-Scissors Game (Commit-Reveal) on Stacks Blockchain
+# Rock-Paper-Scissors (Commit-Reveal) — Phase 2
 
-## 📌 Overview
-This is a two-player Rock-Paper-Scissors game implemented in **Clarity** using the **commit–reveal scheme** to prevent cheating.  
-Players first commit to a hashed move, then later reveal their move with a secret nonce to prove it matches the commit.
+## What's new in Phase 2
+- Fixed earlier parsing & syntax bugs.
+- Best-of-N rounds (odd N; default example is 3).
+- Commit-reveal per round with preimage verification.
+- Timeout / forfeit mechanism.
+- Leaderboard contract to record wins (authorized caller pattern).
+- Improved security checks: only registered players may commit/reveal; preimage vs commit verified on-chain.
 
----
+## Usage (quick)
+1. `clarinet check` — ensure contracts compile.
+2. Deploy both contracts (or use Clarinet test environment).
+3. In `leaderboard`:
+   - call `init-owner` with your key.
+   - call `set-authorized <principal-of-game-contract>` to allow the game contract to record wins.
+4. In `rock-paper-scissors`:
+   - Player1: `create-game <id> <player2-principal> <rounds>`
+   - Both players: `submit-commit <id> <commit>` where `commit = sha256(preimage)` and `preimage` = `[1 byte move][nonce bytes]`.
+     - Move encoding: `1` = rock, `2` = paper, `3` = scissors. Example preimage in Node: `Buffer.concat([Buffer.from([1]), Buffer.from("secret123")])`
+   - Both players: `reveal <id> <preimage>` — will return revealed move on success (or error if mismatch)
+   - Off-chain: after both reveals, call `finalize-round <id>` (or if you prefer, call modified finalize-round that reads stored decoded moves; ask me to switch)
+   - When match completes, call leaderboard via the authorized caller flow (or have the game contract call it if you set it as authorized).
 
-## 🎯 Game Flow
-1. **Create Game** – Player 1 creates a game with a unique `game-id`.
-2. **Join Game** – Player 2 joins the game.
-3. **Commit Phase** – Both players submit a `commit` (SHA256 hash of `"<move>:<nonce>"`).
-4. **Reveal Phase** – Each player reveals their `preimage` and declared move.
-5. **Winner Determination** – Once both players reveal, the contract determines the winner.
+## Security notes
+- Preimage must be secret until reveal. Use a secure random nonce.
+- Commits are `sha256(preimage)` stored as `(buff 32)`.
+- Use odd N (3,5) for best-of behavior.
+- For production, consider adding STX staking and clear event logs; I can add escrow safely in a follow-up.
 
----
-
-## 🔒 Commit–Reveal Scheme
-- **Commit**: `sha256("<move>:<nonce>")`
-  - Example: `sha256("0:random123")`
-  - `0` = Rock, `1` = Paper, `2` = Scissors
-  - `nonce` is a secret random string to prevent guessing.
-- **Reveal**: Provide the preimage (`"<move>:<nonce>"`) to verify the commit.
-
----
-
-## 🛠 Setup Instructions
-
-### 1️⃣ Install Dependencies
-Make sure you have:
-- [Clarinet](https://docs.hiro.so/clarinet/getting-started) installed
-- Node.js (for helper script)
-
-```bash
-clarinet --version
-2️⃣ Initialize Project
-bash
-Copy
-Edit
-clarinet new rps-game
-cd rps-game
-3️⃣ Add Contract
-Place the smart contract in:
-
-bash
-Copy
-Edit
-contracts/rock-paper-scissors.clar
-4️⃣ Commit Helper Script
-Use the helper script to generate commit hashes:
-
-bash
-Copy
-Edit
-node scripts/make_commit.js <move> <nonce>
-Example:
-
-bash
-Copy
-Edit
-node scripts/make_commit.js 0 secret123
-5️⃣ Testing
-Run all tests:
-
-bash
-Copy
-Edit
-clarinet test
-📂 Project Structure
-bash
-Copy
-Edit
-rps-game/
-│
-├─ Clarinet.toml                # Clarinet configuration
-├─ README.md                     # Project documentation
-├─ contracts/
-│  └─ rock-paper-scissors.clar   # Smart contract
-├─ scripts/
-│  └─ make_commit.js             # Commit hash generator
-├─ tests/
-│  └─ rps_test.ts                # Clarinet tests
-└─ .gitignore
-⚠ Security Notes
-Players must use a secure random nonce.
-
-Preimage parsing in the contract should ensure the declared move matches the one in the preimage.
-
-Consider adding timeouts & forfeits for non-reveals.
+## References
+- Clarity `slice?` / buffer utilities. :contentReference[oaicite:2]{index=2}
+- Clarity `stx-transfer?` (for future escrow work). :contentReference[oaicite:3]{index=3}
